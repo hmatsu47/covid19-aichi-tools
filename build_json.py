@@ -1,10 +1,18 @@
 import csv
+import io
 import json
+import pandas as pd
+import sys
+from dateutil import tz
 from datetime import datetime, date, time, timedelta
-import io, sys
 
-patiants_list = []
-patiants_summary_dic = {}
+# Japan Standard Time (UTC + 09:00)
+JST = tz.gettz('Asia/Tokyo')
+JST_current_time = datetime.now(tz=JST).strftime('%Y/%m/%d %H:%M')
+
+
+patients_list = []
+patients_summary_dic = {}
 main_summary_dic = {}
 
 # 引数を取得 異常系処理はしてないので注意
@@ -13,9 +21,9 @@ args = sys.argv
 with open('data/patients.csv', 'r', encoding="utf-8") as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
-        patiants_list.append(row)
-        patiants_summary_dic.setdefault(row['date'], 0)
-        patiants_summary_dic[row['date']] += 1
+        patients_list.append(row)
+        patients_summary_dic.setdefault(row['date'], 0)
+        patients_summary_dic[row['date']] += 1
 
 # 日付のリストを生成
 strdt = datetime.strptime("2020-01-26", '%Y-%m-%d')  # 開始日
@@ -31,10 +39,10 @@ for i in range(days_num):
 patients_summary_list = []
 
 for date in datelist:
-    patiants_summary_dic.setdefault(date.strftime('%Y-%m-%d'), 0)
+    patients_summary_dic.setdefault(date.strftime('%Y-%m-%d'), 0)
     patients_summary_list.append({
         "日付": date.strftime('%Y-%m-%d'),
-        "小計": patiants_summary_dic[date.strftime('%Y-%m-%d')]
+        "小計": patients_summary_dic[date.strftime('%Y-%m-%d')]
     })
 
 main_summary_dic = {}
@@ -43,6 +51,9 @@ with open('data/main_summary.csv', 'r', encoding="utf-8") as csvfile:
     reader = csv.reader(csvfile)
     for row in reader:
         main_summary_dic[row[0]] = int(row[1])
+
+# main_summary_history.csvをPandasのDataframeに変換
+main_summary_history_df = pd.read_csv('data/main_summary_history.csv', keep_default_na=False)
 
 # 検査件数の読み込み
 inspections_summary_list = []
@@ -57,18 +68,18 @@ with open('data/inspections_summary.csv', 'r', encoding="utf-8") as csvfile:
 
 data = {
     "patients": {
-        "date": datetime.now().strftime('%Y/%m/%d %H:%M'),
-        "data": patiants_list
+        "date": JST_current_time,
+        "data": patients_list
     },
     "patients_summary" : {
-        "date": datetime.now().strftime('%Y/%m/%d %H:%M'),
+        "date": JST_current_time,
         "data": patients_summary_list
     },
     "inspections_summary" : {
-        "date": datetime.now().strftime('%Y/%m/%d %H:%M'),
+        "date": JST_current_time,
         "data": inspections_summary_list
     },
-    "lastUpdate": datetime.now().strftime('%Y/%m/%d %H:%M'),
+    "lastUpdate": JST_current_time,
     "main_summary" : {
             "attr": "検査実施人数",
             "value": main_summary_dic['検査実施人数'],
@@ -106,6 +117,10 @@ data = {
                     ]
                 }
             ]
+    },
+    "main_summary_history": {
+        "date": JST_current_time,
+        "data": json.loads(main_summary_history_df.to_json(orient='records', force_ascii=False))
     }
 }
 
