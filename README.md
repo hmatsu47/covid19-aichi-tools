@@ -20,7 +20,6 @@ $ cd covid19-aichi-tools
 下記の3ファイルを更新する。
 
 * data/patients.csv
-* data/main_summary.csv
 * data/main_summary_history.csv
 * data/inspections_summary.csv
 
@@ -28,7 +27,6 @@ Googleドライブで管理している最新データをダウンロードす�
 
 ```
 $ wget "https://docs.google.com/spreadsheets/d/12qStuXjsI8GE8qI1mLPLV--6TQcxAMPDu3-k9RCHN1k/export?format=csv&gid=0" -O data/patients.csv
-$ wget "https://docs.google.com/spreadsheets/d/1DdluQBSQSiACG1CaIg4K3K-HVeGGThyecRHSA84lL6I/export?format=csv&gid=0" -O data/main_summary.csv
 $ wget "https://docs.google.com/spreadsheets/d/1DdluQBSQSiACG1CaIg4K3K-HVeGGThyecRHSA84lL6I/export?format=csv&gid=1019512361" -O /covid19/data/main_summary_history.csv
 $ wget "https://docs.google.com/spreadsheets/d/1ivROd_s3AmvY480XKEZR_COAlx08gOGxZYRYubxghP0/export?format=csv&gid=0" -O data/inspections_summary.csv
 ```
@@ -94,7 +92,7 @@ https://github.com/code4nagoya/covid19
 
 「陽性患者数」や「陽性患者の属性」のグラフに使用するデータです。
 
-出典元: https://www.pref.aichi.jp/site/covid19-aichi/kansensya-kensa.html の県内発生事例一覧(PDFファイル)
+出典元: https://www.pref.aichi.jp/site/covid19-aichi/kansensya-kensa.html の県内発生事例一覧(PDFファイルまたはExcelファイル)
 
 * 下記のヘッダ行が必要です。
 * ヘッダ行の各カラム名がそのままJSONに出力されます。
@@ -102,7 +100,7 @@ https://github.com/code4nagoya/covid19
 | ヘッダ     | データ                    | 例         |
 | ---------- | ------------------------- | ---------- |
 | No         | 連番の数値                | 1          |
-| 発表日     | YYYY/m/d                  | 2020/2/24  |
+| 発表日     | YYYY/MM/dd HH:mm         | 2020/02/24 00:00  |
 | 年代・性別 | 文字列                    | 40代男性   |
 | 国籍       | 文字列                    | 日本       |
 | 住居地     | 文字列                    | 名古屋市   |
@@ -110,28 +108,7 @@ https://github.com/code4nagoya/covid19
 | 備考       | 文字列                    | 本県発表   |
 | date       | YYYY-MM-DD                | 2020-02-24 |
 | w          | 曜日を表す数値(0が日曜日) | 2          |
-| short_date | YY/MM                     | 02¥/24     |
-
-### data/main_summary.csv
-
-「検査陽性者の状況」のグラフに使用するデータです。
-
-出典元: https://www.pref.aichi.jp/site/covid19-aichi/ の検査陽性者の状況
-
-* ヘッダ行は不要です。
-* ヘッダ列が必要です。
-* 下記の行が必要です。
-
-| ヘッダ列(1列目) | データ列(2列目) |
-| --------------- | --------------- |
-| 検査実施人数    | 数値            |
-| 陽性患者数      | 数値            |
-| 入院中          | 数値            |
-| 軽症・中等症    | 数値            |
-| 重症            | 数値            |
-| 退院            | 数値            |
-| 転院            | 数値            |
-| 死亡            | 数値            |
+| short_date | MM/dd                     | 02¥/24     |
 
 ### data/main_summary_history.csv
 
@@ -167,11 +144,13 @@ https://github.com/code4nagoya/covid19
 
 | ヘッダ         | データ   | 例                                  |
 | -------------- | -------- | ----------------------------------- |
-| 検査日         | YYYY/m/d | 2020/03/02                          |
-| 検査件数（件） | 数値     | 639                                 |
-| 陽性者数（人） | 数値     | 30                                  |
-| 合算           | 文字列   | 〇                                  |
-| 備考           | 文字列   | 1月30日（木曜日）～3月1日（日曜日） |
+| 検査日           | YYYY/MM/dd | 2020/03/02                          |
+| PCR検査件数（件） | 数値     | 639                                 |
+| 抗原検査件数（件） | 数値     | 639                                 |
+| 陽性者数（人）    | 数値     | 30                                  |
+| 率（％）          | 浮動小数点 | 1.98                              |
+| 備考             | 文字列   | 1月30日（木曜日）～3月1日（日曜日） |
+| 合算             | 文字列   | 〇                                  |
 
 
 
@@ -182,3 +161,21 @@ $ docker build . -t covid19-aichi-tools
 $ docker run --rm -v /covid19/data:./data covid19-aichi-tools
 $ ls -lh data/
 ```
+
+## Docker環境について(docker-compose 版) 
+
+[docker-compose](http://docs.docker.jp/compose/install.html) がインストールされていれば、以下のコマンドで実行できます。
+スクリプトを変更しながら Docker 上での動作を確認したいときに便利です。
+
+```
+$ docker-compose run --rm covid19-aichi-tool
+```
+
+``/data`` に結果が出力されます。
+
+### Docker Image の削除
+
+毎回行う必要はありません。しばらく開発から離れる場合や容量不足の時に実行してください。
+
+1. ``docker image`` で Docker Image して "covid19-aichi-tools" の名前が付いているものを見つける
+2. ``docker rmi image名`` で削除
